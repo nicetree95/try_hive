@@ -19,7 +19,7 @@ p                       int
 p                       int                                         
 
 
---пытаюсь вставить данные, ошибка, прописываю указанный параметр
+--пытаюсь вставить данные, ошибка, прописываю указанные в презе параметры для динамического партиционирования
 FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column. To turn this off set hive.exec.dynamic.partition.mode=nonstrict
 hive> SET hive.exec.dynamic.partition = true;
 hive> SET hive.exec.dynamic.partition.mode = nonstrict;
