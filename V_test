@@ -275,3 +275,56 @@ OK
 243     168     754     350     3
 312     383     714     107     4
 Time taken: 0.244 seconds, Fetched: 3 row(s)
+
+
+
+
+--2. наверное можно создать новую таблицу из имеющейся и удалить прошлую, если replace и drop не работают
+
+hive> CREATE TABLE temp_table AS
+    > SELECT
+    >   id,
+    >   col1,
+    >   col3,
+    >   p
+    > FROM
+    >   V_table;
+Query ID = sbb_student_07_20240201001631_c2645447-2777-465b-b0a5-7a4451c67fff
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0024)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 01/01  [==========================>>] 100%  ELAPSED TIME: 5.98 s     
+----------------------------------------------------------------------------------------------
+Moving data to directory hdfs://adhcluster2.neoflex.ru:8020/apps/hive/warehouse/temp_table
+OK
+Time taken: 93.886 seconds
+hive> select * from temp_table limit 20;
+OK
+0       jy1     d6h     1
+1       5a1     kgf     1
+2       6mq     2ah     1
+3       id5     028     1
+4       j22     4pc     1
+5       006     88c     1
+6       0t7     i4t     1
+7       ghq     0f3     1
+8       47v     1a5     1
+9       63k     c0y     1
+10      mvk     olw     1
+11      1g5     42m     1
+12      7l0     w4e     1
+13      ynd     85p     1
+14      b0f     eqe     1
+15      415     bei     1
+16      pim     7pw     1
+17      8jf     0nh     1
+18      xas     4is     1
+19      5op     a60     1
+Time taken: 0.208 seconds, Fetched: 20 row(s)
+hive> alter table test_table rename to V2_table
