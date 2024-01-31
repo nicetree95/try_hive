@@ -148,4 +148,130 @@ p=6
 p=7
 p=8
 p=9
+Time taken: 0.849 seconds, Fetched: 10 row(s)
 
+-- Найти макс и минимум в каждой партиции, где все значения col1 col2 col3 цифр
+
+hive> SELECT
+    >   p,
+    >   min(id),
+    >   max(id),
+    >   count(*)
+    > FROM
+    >   V_table
+    > WHERE
+    >   concat(col1, col2, col3) RLIKE '^[a-z]+$'
+    > GROUP BY
+    >   p;
+Query ID = sbb_student_07_20240131234020_4e8d51a5-e684-41cf-a5ca-39e884b5c381
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0016)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 4.36 s     
+----------------------------------------------------------------------------------------------
+OK
+Time taken: 5.444 seconds
+
+
+--проверю, похоже такие не нагенерировались
+
+hive> select count(*) from V_table where concat(col1, col2, col3) RLIKE '^[a-z]+$'
+    > ;
+Query ID = sbb_student_07_20240131234233_8037bd26-eb71-4cc9-b45d-ffe959f28d62
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0016)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 36.08 s    
+----------------------------------------------------------------------------------------------
+OK
+0
+Time taken: 36.957 seconds, Fetched: 1 row(s)
+
+
+-- посмотрю по какому-то одному столбцу (col1)
+
+hive> select p, count(*), max(id) , min(id)  from V_table where col1 RLIKE '^[0-9]+$' group by p;
+Query ID = sbb_student_07_20240131234629_557dcd10-4df6-4565-9dc3-6142aba81929
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0018)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 5.26 s     
+----------------------------------------------------------------------------------------------
+OK
+1       10      97      5
+2       9       192     102
+3       11      299     211
+4       17      399     300
+5       8       493     407
+6       17      592     511
+7       11      699     630
+8       14      788     700
+9       9       890     822
+10      18      998     902
+Time taken: 6.177 seconds, Fetched: 10 row(s)
+
+-- аналогично для символьных комбинаций
+-- такие нашлись под одному значению в нескольких партициях:
+
+
+hive> 
+    > SELECT
+    >   p,
+    >   max(id),
+    >   min(id),
+    >   count(*) 
+    > FROM
+    >   V_table
+    > WHERE
+    >   concat(col1, col2, col3) RLIKE '^[0-9]+$'
+    > GROUP BY
+    >   p;
+Query ID = sbb_student_07_20240131234852_7d4b6044-1c84-4b5d-b19a-f91070d67423
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0018)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 5.18 s     
+----------------------------------------------------------------------------------------------
+OK
+2       146     146     1
+3       243     243     1
+4       312     312     1
+Time taken: 6.082 seconds, Fetched: 3 row(s)
+
+
+-- проверю на всякий
+
+hive> select * from V_table where concat(col1, col2, col3) RLIKE '^[0-9]+$';
+OK
+146     283     237     785     2
+243     168     754     350     3
+312     383     714     107     4
+Time taken: 0.244 seconds, Fetched: 3 row(s)
