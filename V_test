@@ -1,1 +1,151 @@
+-- Создаю табл и смотрю структуру
+
+hive> create table V_table (id bigint,col1 string,col2 string,col3 string)
+    > partitioned by (p int)
+    > STORED AS PARQUET;
+OK
+Time taken: 0.132 seconds
+hive> describe V_table
+    > ;
+OK
+id                      bigint                                      
+col1                    string                                      
+col2                    string                                      
+col3                    string                                      
+p                       int                                         
+                 
+# Partition Information          
+# col_name              data_type               comment             
+p                       int                                         
+
+
+--пытаюсь вставить данные, ошибка, прописываю указанный параметр
+FAILED: SemanticException [Error 10096]: Dynamic partition strict mode requires at least one static partition column. To turn this off set hive.exec.dynamic.partition.mode=nonstrict
+hive> SET hive.exec.dynamic.partition = true;
+hive> SET hive.exec.dynamic.partition.mode = nonstrict;
+
+
+--Смотрю, какие еще посоздавали таблички, и вставляю данные в свою
+
+hive> show tables;
+OK
+iagunov_table
+safinmr_test
+test_table
+tst1_ext
+tst2_ext
+tst_ext
+v_table
+Time taken: 0.101 seconds, Fetched: 7 row(s)
+
+hive> insert into V_table 
+    > partition (p)
+    > select * from
+    > (
+    > with rand1 as (
+    > select 
+    >   concat(
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END) as col1,
+    >   concat(
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END) as col2,
+    >   concat(
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END,
+    >     case when rand() >= 0.5 then CHR(97 + FLOOR(rand() * 25) ) else chr(48 + FLOOR(rand() * 9)) END) as col3,
+    > id
+    > FROM
+    > (SELECT posexplode(split(space(999), ' ')) AS (id, d)
+    > ) t)
+    > select id, col1, col2, col3, 
+    > NTILE(10) OVER() as p
+    >  from rand1) as t1;
+Query ID = sbb_student_07_20240131230846_2576283e-222c-48a2-99c5-85f66fd3e739
+Total jobs = 1
+Launching Job 1 out of 1
+Tez session was closed. Reopening...
+Session re-established.
+Session re-established.
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0015)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 3 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 03/03  [==========================>>] 100%  ELAPSED TIME: 6.50 s     
+----------------------------------------------------------------------------------------------
+Loading data to table default.v_table partition (p=null)
+
+
+         Time taken to load dynamic partitions: 0.908 seconds
+         Time taken for adding to write entity : 0.0 seconds
+OK
+Time taken: 41.958 seconds
+
+--Проверяю, что все норм заполнила
+
+hive> select count(*) from V_table;
+Query ID = sbb_student_07_20240131230956_c2069bde-0473-4bbf-bc1e-22388d3690f2
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0015)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 4.45 s     
+----------------------------------------------------------------------------------------------
+OK
+1000
+Time taken: 5.638 seconds, Fetched: 1 row(s)
+
+hive> select p, count(*) from V_table
+    > group by p;
+Query ID = sbb_student_07_20240131231025_1ce522dc-99f8-4dc9-865b-99827ac633c6
+Total jobs = 1
+Launching Job 1 out of 1
+Status: Running (Executing on YARN cluster with App id application_1706724801128_0015)
+
+----------------------------------------------------------------------------------------------
+        VERTICES      MODE        STATUS  TOTAL  COMPLETED  RUNNING  PENDING  FAILED  KILLED  
+----------------------------------------------------------------------------------------------
+Map 1 .......... container     SUCCEEDED      1          1        0        0       0       0  
+Reducer 2 ...... container     SUCCEEDED      1          1        0        0       0       0  
+----------------------------------------------------------------------------------------------
+VERTICES: 02/02  [==========================>>] 100%  ELAPSED TIME: 4.49 s     
+----------------------------------------------------------------------------------------------
+OK
+1       100
+2       100
+3       100
+4       100
+5       100
+6       100
+7       100
+8       100
+9       100
+10      100
+Time taken: 5.409 seconds, Fetched: 10 row(s)
+
+hive> show partitions V_table;
+OK
+p=1
+p=10
+p=2
+p=3
+p=4
+p=5
+p=6
+p=7
+p=8
+p=9
 
